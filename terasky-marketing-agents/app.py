@@ -87,8 +87,7 @@ def main():
     )
 
     # Header
-    st.image("static/terasky-logo.png", width=200)
-    st.title("TeraSky Marketing AI Demo")
+    st.title("🚀 TeraSky Marketing AI Demo")
     st.subheader("AWS Summit TLV 2025")
     
     # Product Selection
