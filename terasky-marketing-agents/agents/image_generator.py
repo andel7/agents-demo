@@ -244,7 +244,18 @@ Focus on creating professional, technical, and modern visuals that align with Te
             )
             
             # Parse response
-            response_body = json.loads(response['body'].read())
+            self.log_activity(f"Image generation response type: {type(response)}", "debug")
+            self.log_activity(f"Image generation response keys: {response.keys() if hasattr(response, 'keys') else 'No keys'}", "debug")
+            
+            body = response.get('body')
+            self.log_activity(f"Response body type: {type(body)}", "debug")
+            
+            if hasattr(body, 'read'):
+                response_body = json.loads(body.read())
+            else:
+                # If body is already a string, parse it directly
+                response_body = json.loads(body)
+            
             image_data = response_body.get('images', [{}])[0].get('base64', '')
             
             return image_data

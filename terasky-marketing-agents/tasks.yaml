@@ -1,0 +1,93 @@
+product_research_task:
+  description: >
+    Conduct comprehensive research on the selected TeraSky product: {product_name}.
+    Analyze the product's features, benefits, competitive advantages, target market,
+    and positioning within the enterprise technology landscape. Focus on understanding
+    what makes this product unique and valuable to potential customers.
+  expected_output: >
+    A detailed product research report in JSON format containing:
+    - Product overview and key features
+    - Competitive advantages and differentiators
+    - Target market analysis
+    - Value propositions
+    - Technical specifications and capabilities
+    - Market positioning and pricing considerations
+  output_type: json
+
+audience_research_task:
+  description: >
+    Based on the product research for {product_name}, analyze the target audience
+    and market segments. Identify key personas, decision-makers, pain points,
+    and communication preferences. Focus on enterprise technology buyers and
+    their specific needs and challenges.
+  expected_output: >
+    A comprehensive audience analysis in JSON format containing:
+    - Target personas and roles
+    - Company profiles and characteristics
+    - Pain points and challenges
+    - Decision-making processes
+    - Preferred communication channels
+    - Budget considerations and buying cycles
+  output_type: json
+
+campaign_strategy_task:
+  description: >
+    Develop a comprehensive marketing campaign strategy for {product_name} based
+    on the product research and audience analysis. Create a multi-channel approach
+    that aligns with business objectives and target audience needs.
+  expected_output: >
+    A detailed campaign strategy in JSON format containing:
+    - Campaign objectives and success metrics
+    - Channel strategy and tactics
+    - Content strategy and messaging
+    - Targeting and segmentation approach
+    - Campaign timeline and phases
+    - Budget allocation recommendations
+  output_type: json
+
+content_creation_task:
+  description: >
+    Create compelling marketing content for {product_name} across multiple channels
+    and formats. Develop content that resonates with the target audience and
+    supports the campaign strategy. Ensure all content maintains TeraSky's
+    professional and technical brand voice.
+  expected_output: >
+    Comprehensive marketing content in JSON format containing:
+    - Social media content (LinkedIn, Twitter, Facebook, Instagram)
+    - Email marketing content (newsletters, drip campaigns, invitations)
+    - Blog content (articles, technical deep-dives, case studies)
+    - Ad copy (Google Ads, LinkedIn Ads, display ads)
+    - Landing page content (hero sections, features, CTAs)
+  output_type: json
+
+quality_assurance_task:
+  description: >
+    Review and validate all marketing content and campaign materials for {product_name}.
+    Ensure technical accuracy, brand consistency, audience alignment, and overall
+    quality. Provide detailed feedback and recommendations for improvement.
+  expected_output: >
+    A comprehensive quality assessment in JSON format containing:
+    - Content accuracy evaluation
+    - Brand alignment assessment
+    - Target audience fit analysis
+    - Compliance and safety review
+    - Content quality evaluation
+    - Improvement suggestions and recommendations
+  output_type: json
+
+final_campaign_report_task:
+  description: >
+    Compile all research, strategy, content, and quality assurance results into
+    a comprehensive final campaign report for {product_name}. Create a well-structured
+    document that can be used by the marketing team for campaign implementation.
+  expected_output: >
+    A complete marketing campaign report in markdown format containing:
+    - Executive Summary
+    - Product Research Summary
+    - Audience Analysis Summary
+    - Campaign Strategy Overview
+    - Complete Content Library
+    - Quality Assurance Results
+    - Implementation Recommendations
+    - Next Steps and Timeline
+  output_type: markdown 
