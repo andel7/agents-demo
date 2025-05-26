@@ -118,6 +118,37 @@ class SimpleBedrockAgent:
             # Wait for role to be available
             time.sleep(10)
     
+    def wait_for_agent_ready(self):
+        """Wait for agent to be in a ready state."""
+        if not self.agent_id:
+            return
+            
+        max_attempts = 30  # Wait up to 5 minutes
+        attempt = 0
+        
+        while attempt < max_attempts:
+            try:
+                response = bedrock_agent_client.get_agent(agentId=self.agent_id)
+                status = response['agent']['agentStatus']
+                
+                if status == 'CREATED':
+                    logger.info(f"Agent {self.name} is ready (status: {status})")
+                    return
+                elif status in ['CREATING', 'UPDATING', 'PREPARING']:
+                    logger.info(f"Agent {self.name} is still {status}, waiting...")
+                    time.sleep(10)
+                    attempt += 1
+                else:
+                    logger.error(f"Agent {self.name} is in unexpected state: {status}")
+                    return
+                    
+            except Exception as e:
+                logger.error(f"Error checking agent status: {str(e)}")
+                time.sleep(10)
+                attempt += 1
+        
+        logger.warning(f"Agent {self.name} did not become ready within expected time")
+    
     def create(self):
         """Create the Bedrock agent."""
         try:
@@ -139,12 +170,15 @@ class SimpleBedrockAgent:
             
             logger.info(f"Created agent {self.name} with ID: {self.agent_id}")
             
+            # Wait for agent to be in a valid state before preparing
+            self.wait_for_agent_ready()
+            
             # Prepare the agent
             bedrock_agent_client.prepare_agent(agentId=self.agent_id)
             logger.info(f"Prepared agent {self.name}")
             
-            # Wait for agent to be ready
-            time.sleep(15)
+            # Wait for agent to be ready after preparation
+            time.sleep(10)
             
             return True
             
