@@ -42,16 +42,18 @@ class Config:
     def _validate_config(self):
         """Validate the configuration values."""
         required_fields = [
-            'model_id',
-            'image_model_id',
-            'max_tokens',
-            'temperature',
-            'aws_region'
+            ('bedrock', 'model_id'),
+            ('bedrock', 'image_model_id'),
+            ('bedrock', 'max_tokens'),
+            ('bedrock', 'temperature'),
+            ('aws', 'region')
         ]
         
-        for field in required_fields:
-            if field not in self.config:
-                raise ValueError(f"Missing required configuration field: {field}")
+        for section, field in required_fields:
+            if section not in self.config:
+                raise ValueError(f"Missing required configuration section: {section}")
+            if field not in self.config[section]:
+                raise ValueError(f"Missing required configuration field: {section}.{field}")
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a configuration value."""
