@@ -61,6 +61,29 @@ class BaseAgent(ABC):
             
             return json.loads(json_str)
         except json.JSONDecodeError as e:
+            # Handle "Extra data" error by trying to extract just the JSON part
+            if "Extra data" in str(e):
+                try:
+                    # Try to find the complete JSON object by looking for balanced braces
+                    json_str = response.strip()
+                    brace_count = 0
+                    json_end_pos = 0
+                    
+                    for i, char in enumerate(json_str):
+                        if char == '{':
+                            brace_count += 1
+                        elif char == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                json_end_pos = i + 1
+                                break
+                    
+                    if json_end_pos > 0:
+                        valid_json = json_str[:json_end_pos]
+                        return json.loads(valid_json)
+                except:
+                    pass
+            
             logger.error(f"Error parsing JSON response: {str(e)}")
             logger.error(f"Raw response content: {response[:500]}...")
             # Return a default error structure instead of raising
