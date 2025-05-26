@@ -970,18 +970,38 @@ class AgentsForAmazonBedrock:
             try:
                 if verbose:
                     print(f"kwargs: {_kwargs}")
-                _create_agent_response = self._bedrock_agent_client.create_agent(
-                    agentName=agent_name,
-                    agentResourceRoleArn=_role_arn,
-                    description=agent_description.replace(
-                        "\n", ""
-                    ),  # console doesn't like newlines for subsequent editing
-                    idleSessionTTLInSeconds=1800,
-                    foundationModel=_model_id,
-                    instruction=agent_instructions,
-                    agentCollaboration=agent_collaboration,
-                    **_kwargs,
-                )
+                # Check if agentCollaboration is supported in this boto3 version
+                try:
+                    _create_agent_response = self._bedrock_agent_client.create_agent(
+                        agentName=agent_name,
+                        agentResourceRoleArn=_role_arn,
+                        description=agent_description.replace(
+                            "\n", ""
+                        ),  # console doesn't like newlines for subsequent editing
+                        idleSessionTTLInSeconds=1800,
+                        foundationModel=_model_id,
+                        instruction=agent_instructions,
+                        agentCollaboration=agent_collaboration,
+                        **_kwargs,
+                    )
+                except Exception as collaboration_error:
+                    if "agentCollaboration" in str(collaboration_error):
+                        # Fall back to creating agent without collaboration parameter
+                        if verbose:
+                            print(f"agentCollaboration not supported in this boto3 version, creating agent without it...")
+                        _create_agent_response = self._bedrock_agent_client.create_agent(
+                            agentName=agent_name,
+                            agentResourceRoleArn=_role_arn,
+                            description=agent_description.replace(
+                                "\n", ""
+                            ),  # console doesn't like newlines for subsequent editing
+                            idleSessionTTLInSeconds=1800,
+                            foundationModel=_model_id,
+                            instruction=agent_instructions,
+                            **_kwargs,
+                        )
+                    else:
+                        raise collaboration_error
                 _agent_id = _create_agent_response["agent"]["agentId"]
                 if verbose:
                     print(f"Created agent, resulting id: {_agent_id}")
