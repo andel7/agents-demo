@@ -10,9 +10,11 @@ class BaseAgent(ABC):
     def __init__(self, bedrock_client: boto3.client, config: Dict):
         self.bedrock_client = bedrock_client
         self.config = config
-        self.model_id = config.get('model_id', 'anthropic.claude-3-sonnet-20240229-v1:0')
-        self.max_tokens = config.get('max_tokens', 4096)
-        self.temperature = config.get('temperature', 0.7)
+        # Get bedrock config from the bedrock section
+        bedrock_config = config.get('bedrock', config)
+        self.model_id = bedrock_config.get('model_id', 'anthropic.claude-3-5-sonnet-20240620-v1:0')
+        self.max_tokens = bedrock_config.get('max_tokens', 4096)
+        self.temperature = bedrock_config.get('temperature', 0.7)
 
     def _invoke_bedrock(self, prompt: str) -> str:
         """Invoke Bedrock model with the given prompt."""

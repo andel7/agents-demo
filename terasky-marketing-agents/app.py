@@ -25,7 +25,7 @@ if 'campaign_results' not in st.session_state:
 config = load_config()
 
 # Initialize Bedrock client
-bedrock_client = boto3.client('bedrock-runtime')
+bedrock_client = boto3.client('bedrock-runtime', region_name=config.get('aws', {}).get('region', 'us-east-2'))
 
 # Product catalog
 PRODUCTS = {

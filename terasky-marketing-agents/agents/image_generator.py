@@ -6,7 +6,9 @@ from .base_agent import BaseAgent
 class ImageGenerator(BaseAgent):
     def __init__(self, bedrock_client, config):
         super().__init__(bedrock_client, config)
-        self.image_model_id = config.get('image_model_id', 'stability.stable-diffusion-xl-v1')
+        # Get bedrock config from the bedrock section
+        bedrock_config = config.get('bedrock', config)
+        self.image_model_id = bedrock_config.get('image_model_id', 'stability.stable-diffusion-xl-v1')
         self.prompt_template = """
 You are a TeraSky image generation expert. Based on the provided product research and content, create detailed image generation prompts in JSON format.
 
