@@ -12,13 +12,19 @@ class BaseAgent(ABC):
         self.config = config
         # Get bedrock config from the bedrock section
         bedrock_config = config.get('bedrock', config)
-        self.model_id = bedrock_config.get('model_id', 'anthropic.claude-3-5-sonnet-20240620-v1:0')
+        self.model_id = bedrock_config.get('model_id', 'us.anthropic.claude-3-5-sonnet-20241022-v2:0')
         self.max_tokens = bedrock_config.get('max_tokens', 4096)
         self.temperature = bedrock_config.get('temperature', 0.7)
+        
+        # Debug logging
+        logger.info(f"Agent {self.__class__.__name__} initialized with model_id: {self.model_id}")
+        logger.info(f"Full config: {config}")
 
     def _invoke_bedrock(self, prompt: str) -> str:
         """Invoke Bedrock model with the given prompt."""
         try:
+            logger.info(f"Invoking Bedrock with model: {self.model_id}")
+            
             # Format the request body according to Claude 3 specifications
             request_body = {
                 "anthropic_version": "bedrock-2023-05-31",
@@ -41,7 +47,7 @@ class BaseAgent(ABC):
             return response_body.get('content', [{}])[0].get('text', '')
             
         except Exception as e:
-            logger.error(f"Error invoking Bedrock: {str(e)}")
+            logger.error(f"Error invoking Bedrock with model {self.model_id}: {str(e)}")
             raise
 
     def _parse_json_response(self, response: str) -> Dict:
