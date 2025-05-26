@@ -1,6 +1,0 @@
-[grafana]
-grafana.url=http://your-grafana-instance:3000
-grafana.token=eyJrIjoixxxxxxxxxxxxxxxxxxxxxx
-
-[github]
-github.token=ghp_xxxxxxxxxxxxxxxxxxxx

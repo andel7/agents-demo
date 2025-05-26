@@ -1,3 +1,0 @@
-requests
-aws-lambda-powertools==3.4.0
-aws_requests_auth

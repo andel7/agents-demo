@@ -1,0 +1,171 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'TeraSky Marketing AI Demo - AWS Summit TLV 2025'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name
+
+  InstanceType:
+    Type: String
+    Default: t3.large
+    AllowedValues:
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+    Description: EC2 instance type
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID
+
+Resources:
+  # Security Group
+  MarketingDemoSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for TeraSky Marketing Demo
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-sg
+        - Key: owner
+          Value: lev@terasky.com
+
+  # IAM Role
+  MarketingDemoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: BedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:ListFoundationModels
+                Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-role
+        - Key: owner
+          Value: lev@terasky.com
+
+  # Instance Profile
+  MarketingDemoInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref MarketingDemoRole
+
+  # EC2 Instance
+  MarketingDemoInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c7217cdde317cfec  # Amazon Linux 2023 AMI
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref MarketingDemoSG
+      IamInstanceProfile: !Ref MarketingDemoInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y python3.9 python3.9-pip git
+          
+          # Install application
+          git clone https://github.com/terasky/marketing-ai-demo.git /opt/marketing-demo
+          cd /opt/marketing-demo
+          
+          # Install dependencies
+          pip3.9 install -r requirements.txt
+          
+          # Create systemd service
+          cat > /etc/systemd/system/marketing-demo.service << EOL
+          [Unit]
+          Description=TeraSky Marketing AI Demo
+          After=network.target
+          
+          [Service]
+          User=ec2-user
+          WorkingDirectory=/opt/marketing-demo
+          Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+          ExecStart=/usr/local/bin/streamlit run app.py --server.port 80
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOL
+          
+          # Start service
+          systemctl enable marketing-demo
+          systemctl start marketing-demo
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-instance
+        - Key: owner
+          Value: lev@terasky.com
+
+  # CloudWatch Log Group
+  MarketingDemoLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /marketing-demo/${Environment}
+      RetentionInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-logs
+        - Key: owner
+          Value: lev@terasky.com
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref MarketingDemoInstance
+
+  InstancePublicDNS:
+    Description: Public DNS of the instance
+    Value: !GetAtt MarketingDemoInstance.PublicDnsName
+
+  SecurityGroupId:
+    Description: Security Group ID
+    Value: !Ref MarketingDemoSG 

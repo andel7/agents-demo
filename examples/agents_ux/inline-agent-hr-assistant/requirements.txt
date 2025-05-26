@@ -1,5 +1,0 @@
-flask-cors
-flask
-opensearch-py
-retrying
-boto3
