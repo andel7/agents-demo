@@ -108,11 +108,46 @@ class SimpleBedrockAgent:
             )
             self.role_arn = response['Role']['Arn']
             
-            # Attach basic Bedrock policy
-            iam_client.attach_role_policy(
-                RoleName=role_name,
-                PolicyArn='arn:aws:iam::aws:policy/AmazonBedrockFullAccess'
-            )
+            # Attach comprehensive Bedrock policies
+            policies_to_attach = [
+                'arn:aws:iam::aws:policy/AmazonBedrockFullAccess',
+                'arn:aws:iam::aws:policy/service-role/AmazonBedrockExecutionRoleForAgents'
+            ]
+            
+            for policy_arn in policies_to_attach:
+                try:
+                    iam_client.attach_role_policy(
+                        RoleName=role_name,
+                        PolicyArn=policy_arn
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not attach policy {policy_arn}: {str(e)}")
+            
+            # Add inline policy for additional permissions
+            inline_policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "bedrock:InvokeModel",
+                            "bedrock:InvokeModelWithResponseStream",
+                            "bedrock:GetFoundationModel",
+                            "bedrock:ListFoundationModels"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+            
+            try:
+                iam_client.put_role_policy(
+                    RoleName=role_name,
+                    PolicyName=f"{role_name}_BedrockAccess",
+                    PolicyDocument=json.dumps(inline_policy)
+                )
+            except Exception as e:
+                logger.warning(f"Could not add inline policy: {str(e)}")
             
             logger.info(f"Created new role: {self.role_arn}")
             
