@@ -29,6 +29,7 @@ agent_yaml_path = os.path.join(current_dir, "agents.yaml")
 # AWS clients
 bedrock_client = boto3.client('bedrock-runtime')
 bedrock_agent_client = boto3.client('bedrock-agent')
+bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime')
 iam_client = boto3.client('iam')
 sts_client = boto3.client('sts')
 
@@ -131,7 +132,7 @@ class SimpleBedrockAgent:
                 response = bedrock_agent_client.get_agent(agentId=self.agent_id)
                 status = response['agent']['agentStatus']
                 
-                if status == 'CREATED':
+                if status in ['CREATED', 'NOT_PREPARED']:
                     logger.info(f"Agent {self.name} is ready (status: {status})")
                     return
                 elif status in ['CREATING', 'UPDATING', 'PREPARING']:
@@ -139,7 +140,7 @@ class SimpleBedrockAgent:
                     time.sleep(10)
                     attempt += 1
                 else:
-                    logger.error(f"Agent {self.name} is in unexpected state: {status}")
+                    logger.warning(f"Agent {self.name} is in state: {status}")
                     return
                     
             except Exception as e:
@@ -195,7 +196,7 @@ class SimpleBedrockAgent:
             session_id = str(uuid.uuid4())
         
         try:
-            response = bedrock_agent_client.invoke_agent(
+            response = bedrock_agent_runtime_client.invoke_agent(
                 agentId=self.agent_id,
                 agentAliasId='TSTALIASID',
                 sessionId=session_id,
@@ -456,8 +457,13 @@ def main(args):
                 logger.error(f"Error during campaign generation: {str(e)}")
                 traceback.print_exc()
             finally:
-                # Cleanup agents
-                if args.cleanup_after:
+                # Cleanup agents (default behavior for demo)
+                if args.cleanup_after == "true" or args.cleanup_after == "false":
+                    cleanup = args.cleanup_after == "true"
+                else:
+                    cleanup = True  # Default to cleanup for demo
+                    
+                if cleanup:
                     logger.info("Cleaning up agents...")
                     campaign_generator.cleanup_agents()
 
