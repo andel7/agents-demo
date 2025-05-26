@@ -24,6 +24,12 @@ if 'campaign_results' not in st.session_state:
 # Load configuration
 config = load_config()
 
+# Debug: Print configuration
+print("DEBUG: Loaded configuration:")
+print(f"  AWS region: {config.get('aws', {}).get('region', 'not found')}")
+print(f"  Model ID: {config.get('bedrock', {}).get('model_id', 'not found')}")
+print(f"  Full config: {config}")
+
 # Initialize Bedrock client
 bedrock_client = boto3.client('bedrock-runtime', region_name=config.get('aws', {}).get('region', 'us-east-2'))
 
