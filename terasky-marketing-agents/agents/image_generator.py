@@ -1,6 +1,7 @@
 from typing import Dict, List
 import json
 import base64
+import boto3
 from .base_agent import BaseAgent
 
 class ImageGenerator(BaseAgent):
@@ -8,7 +9,12 @@ class ImageGenerator(BaseAgent):
         super().__init__(bedrock_client, config)
         # Get bedrock config from the bedrock section
         bedrock_config = config.get('bedrock', config)
-        self.image_model_id = bedrock_config.get('image_model_id', 'stability.stable-diffusion-xl-v1')
+        self.image_model_id = bedrock_config.get('image_model_id', 'amazon.titan-image-generator-v2:0')
+        self.image_region = bedrock_config.get('image_region', 'us-east-1')
+        
+        # Create a separate client for image generation in us-east-1
+        self.image_client = boto3.client('bedrock-runtime', region_name=self.image_region)
+        
         self.prompt_template = """
 You are a TeraSky image generation expert. Based on the provided product research and content, create detailed image generation prompts in JSON format.
 
@@ -207,36 +213,39 @@ Focus on creating professional, technical, and modern visuals that align with Te
             return self.handle_error(e, "Image generation")
 
     def _generate_image(self, prompt: str, aspect_ratio: str) -> str:
-        """Generate a single image using Bedrock's image generation model."""
+        """Generate a single image using Bedrock's Titan Image Generator."""
         try:
             # Parse aspect ratio
             width, height = map(int, aspect_ratio.split('x'))
             
-            # Prepare request body for Stable Diffusion
+            # Titan supports fixed sizes, so we'll use 1024x1024 for simplicity
+            width, height = 1024, 1024
+            
+            # Prepare request body for Titan Image Generator
             request_body = {
-                "text_prompts": [
-                    {
-                        "text": prompt,
-                        "weight": 1.0
-                    }
-                ],
-                "cfg_scale": 7.5,
-                "steps": 50,
-                "seed": 0,
-                "width": width,
-                "height": height,
-                "style_preset": "photographic"
+                "taskType": "TEXT_IMAGE",
+                "textToImageParams": {
+                    "text": prompt,
+                    "negativeText": "bad quality, blurry, pixelated"
+                },
+                "imageGenerationConfig": {
+                    "numberOfImages": 1,
+                    "height": height,
+                    "width": width,
+                    "cfgScale": 7.5,
+                    "seed": 42
+                }
             }
             
-            # Call Bedrock image generation
-            response = self.bedrock_client.invoke_model(
+            # Call Bedrock image generation using the separate client
+            response = self.image_client.invoke_model(
                 modelId=self.image_model_id,
                 body=json.dumps(request_body)
             )
             
             # Parse response
             response_body = json.loads(response.get('body').read())
-            image_data = response_body.get('artifacts', [{}])[0].get('base64', '')
+            image_data = response_body.get('images', [{}])[0].get('base64', '')
             
             return image_data
             

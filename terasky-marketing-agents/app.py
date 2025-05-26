@@ -115,39 +115,108 @@ def main():
         # Initialize supervisor
         supervisor = initialize_supervisor(selected_product)
         
+        # Create progress indicators
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
         # Start campaign generation
-        with st.spinner("Initializing marketing campaign generation..."):
-            try:
-                # Start the campaign generation process
-                campaign_results = supervisor.generate_campaign()
-                st.session_state.campaign_results = campaign_results
-                
-                # Display results
-                st.success("🎉 Campaign Generation Complete!")
-                display_campaign_results(campaign_results)
-                
-            except Exception as e:
-                st.error(f"Error generating campaign: {str(e)}")
-                logger.error(f"Campaign generation failed: {str(e)}")
-                st.session_state.campaign_started = False
+        try:
+            # Step 1: Product Research
+            status_text.text("🔍 Researching product information...")
+            progress_bar.progress(20)
+            
+            product_research = supervisor.agents['product_researcher'].research(PRODUCTS[selected_product])
+            st.success("✅ Product research completed")
+            
+            # Step 2: Audience Research  
+            status_text.text("👥 Analyzing target audience...")
+            progress_bar.progress(40)
+            
+            audience_research = supervisor.agents['audience_researcher'].research(product_research)
+            st.success("✅ Audience analysis completed")
+            
+            # Step 3: Campaign Strategy
+            status_text.text("📊 Developing campaign strategy...")
+            progress_bar.progress(60)
+            
+            strategy = supervisor.agents['campaign_strategist'].develop_strategy(product_research, audience_research)
+            st.success("✅ Campaign strategy developed")
+            
+            # Step 4: Content Creation
+            status_text.text("✍️ Creating marketing content...")
+            progress_bar.progress(80)
+            
+            content = supervisor.agents['content_creator'].create_content(product_research, audience_research, strategy)
+            st.success("✅ Marketing content created")
+            
+            # Step 5: Generate limited images (only 2 types)
+            status_text.text("🎨 Generating marketing visuals...")
+            progress_bar.progress(90)
+            
+            # Generate only social media and blog images
+            limited_images = _generate_limited_images(supervisor, product_research, content)
+            
+            progress_bar.progress(100)
+            status_text.text("🎉 Campaign generation completed!")
+            
+            # Compile results
+            campaign_results = {
+                'product': PRODUCTS[selected_product],
+                'strategy': strategy,
+                'audience': audience_research,
+                'content': content,
+                'images': limited_images
+            }
+            
+            st.session_state.campaign_results = campaign_results
+            st.session_state.campaign_started = False
+            
+            # Display results
+            st.success("🎉 Campaign Generation Complete!")
+            display_campaign_results(campaign_results)
+            
+        except Exception as e:
+            st.error(f"Error generating campaign: {str(e)}")
+            logger.error(f"Campaign generation failed: {str(e)}")
+            st.session_state.campaign_started = False
+            progress_bar.empty()
+            status_text.empty()
 
-    # Display agent status and logs
-    if st.session_state.campaign_started:
-        st.header("Agent Status")
-        cols = st.columns(3)
+def _generate_limited_images(supervisor, product_research, content):
+    """Generate only 2 types of images to reduce complexity."""
+    try:
+        # Create simplified image prompts
+        simple_prompts = {
+            "social_media": {
+                "prompt": f"Professional marketing image for {product_research.get('name', 'TeraSky product')}, modern tech style, blue and orange colors",
+                "description": "Social media marketing image"
+            },
+            "blog": {
+                "prompt": f"Technical illustration for {product_research.get('name', 'TeraSky product')}, clean professional design, technology theme",
+                "description": "Blog header image"
+            }
+        }
         
-        agents = [
-            "product_researcher",
-            "audience_researcher",
-            "campaign_strategist",
-            "content_creator",
-            "image_generator",
-            "qa_validator"
-        ]
+        generated_images = []
+        for image_type, details in simple_prompts.items():
+            try:
+                image_data = supervisor.agents['image_generator']._generate_image(
+                    details['prompt'], 
+                    "1024x1024"
+                )
+                generated_images.append({
+                    'type': image_type,
+                    'description': details['description'],
+                    'image_data': image_data
+                })
+            except Exception as e:
+                st.warning(f"Could not generate {image_type} image: {str(e)}")
         
-        for i, agent in enumerate(agents):
-            with cols[i % 3]:
-                display_agent_status(agent)
+        return generated_images
+        
+    except Exception as e:
+        st.warning(f"Image generation failed: {str(e)}")
+        return []
 
 def display_campaign_results(results: Dict):
     """Display the generated campaign results."""
@@ -167,8 +236,24 @@ def display_campaign_results(results: Dict):
     
     # Images
     with st.expander("🎨 Generated Images", expanded=True):
-        for image in results.get('images', []):
-            st.image(image['url'], caption=image['description'])
+        images = results.get('images', [])
+        if images:
+            for image in images:
+                st.subheader(f"{image['type'].replace('_', ' ').title()}")
+                st.text(image['description'])
+                if image.get('image_data'):
+                    try:
+                        # Decode base64 image and display
+                        import base64
+                        from io import BytesIO
+                        image_bytes = base64.b64decode(image['image_data'])
+                        st.image(image_bytes, caption=image['description'], width=400)
+                    except Exception as e:
+                        st.error(f"Could not display image: {str(e)}")
+                else:
+                    st.info("No image data available")
+        else:
+            st.info("No images were generated")
     
     # Export Options
     st.download_button(
