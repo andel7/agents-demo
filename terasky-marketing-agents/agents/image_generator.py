@@ -210,18 +210,20 @@ Focus on creating professional, technical, and modern visuals that align with Te
             # Parse aspect ratio
             width, height = map(int, aspect_ratio.split('x'))
             
-            # Prepare request body
+            # Prepare request body for Stable Diffusion
             request_body = {
-                "textToImageParams": {
-                    "text": prompt,
-                    "numberOfImages": 1,
-                    "width": width,
-                    "height": height,
-                    "cfgScale": 7.5,
-                    "seed": 0,
-                    "quality": "standard",
-                    "stylePreset": "photographic"
-                }
+                "text_prompts": [
+                    {
+                        "text": prompt,
+                        "weight": 1.0
+                    }
+                ],
+                "cfg_scale": 7.5,
+                "steps": 50,
+                "seed": 0,
+                "width": width,
+                "height": height,
+                "style_preset": "photographic"
             }
             
             # Call Bedrock image generation
@@ -232,7 +234,7 @@ Focus on creating professional, technical, and modern visuals that align with Te
             
             # Parse response
             response_body = json.loads(response.get('body').read())
-            image_data = response_body.get('images', [{}])[0].get('base64', '')
+            image_data = response_body.get('artifacts', [{}])[0].get('base64', '')
             
             return image_data
             

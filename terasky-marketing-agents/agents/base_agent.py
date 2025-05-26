@@ -17,19 +17,26 @@ class BaseAgent(ABC):
     def _invoke_bedrock(self, prompt: str) -> str:
         """Invoke Bedrock model with the given prompt."""
         try:
+            # Format the request body according to Claude 3 specifications
+            request_body = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            }
+            
             response = self.bedrock_client.invoke_model(
                 modelId=self.model_id,
-                body=json.dumps({
-                    "prompt": prompt,
-                    "max_tokens_to_sample": self.max_tokens,
-                    "temperature": self.temperature,
-                    "top_p": 1,
-                    "stop_sequences": ["\n\nHuman:"]
-                })
+                body=json.dumps(request_body)
             )
             
             response_body = json.loads(response.get('body').read())
-            return response_body.get('completion', '')
+            return response_body.get('content', [{}])[0].get('text', '')
             
         except Exception as e:
             logger.error(f"Error invoking Bedrock: {str(e)}")
