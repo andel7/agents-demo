@@ -62,7 +62,13 @@ class BaseAgent(ABC):
             return json.loads(json_str)
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing JSON response: {str(e)}")
-            raise
+            logger.error(f"Raw response content: {response[:500]}...")
+            # Return a default error structure instead of raising
+            return {
+                "error": True,
+                "message": f"Failed to parse JSON response: {str(e)}",
+                "raw_response": response[:200] + "..." if len(response) > 200 else response
+            }
 
     def _format_prompt(self, template: str, **kwargs) -> str:
         """Format prompt template with given parameters."""

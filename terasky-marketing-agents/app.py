@@ -126,6 +126,14 @@ def main():
             progress_bar.progress(20)
             
             product_research = supervisor.agents['product_researcher'].research(PRODUCTS[selected_product])
+            if isinstance(product_research, dict) and product_research.get('error', False):
+                error_msg = product_research.get('message', 'Unknown error')
+                st.error(f"Product research failed: {error_msg}")
+                # Show the raw response if available for debugging
+                if 'raw_response' in product_research:
+                    with st.expander("Debug: Raw Response"):
+                        st.text(product_research['raw_response'])
+                raise Exception(f"Product research failed: {error_msg}")
             st.success("✅ Product research completed")
             
             # Step 2: Audience Research  
@@ -133,6 +141,13 @@ def main():
             progress_bar.progress(40)
             
             audience_research = supervisor.agents['audience_researcher'].research(product_research)
+            if isinstance(audience_research, dict) and audience_research.get('error', False):
+                error_msg = audience_research.get('message', 'Unknown error')
+                st.error(f"Audience research failed: {error_msg}")
+                if 'raw_response' in audience_research:
+                    with st.expander("Debug: Raw Response"):
+                        st.text(audience_research['raw_response'])
+                raise Exception(f"Audience research failed: {error_msg}")
             st.success("✅ Audience analysis completed")
             
             # Step 3: Campaign Strategy
@@ -140,6 +155,13 @@ def main():
             progress_bar.progress(60)
             
             strategy = supervisor.agents['campaign_strategist'].develop_strategy(product_research, audience_research)
+            if isinstance(strategy, dict) and strategy.get('error', False):
+                error_msg = strategy.get('message', 'Unknown error')
+                st.error(f"Strategy development failed: {error_msg}")
+                if 'raw_response' in strategy:
+                    with st.expander("Debug: Raw Response"):
+                        st.text(strategy['raw_response'])
+                raise Exception(f"Strategy development failed: {error_msg}")
             st.success("✅ Campaign strategy developed")
             
             # Step 4: Content Creation
@@ -147,6 +169,13 @@ def main():
             progress_bar.progress(80)
             
             content = supervisor.agents['content_creator'].create_content(product_research, audience_research, strategy)
+            if isinstance(content, dict) and content.get('error', False):
+                error_msg = content.get('message', 'Unknown error')
+                st.error(f"Content creation failed: {error_msg}")
+                if 'raw_response' in content:
+                    with st.expander("Debug: Raw Response"):
+                        st.text(content['raw_response'])
+                raise Exception(f"Content creation failed: {error_msg}")
             st.success("✅ Marketing content created")
             
             # Step 5: Generate limited images (only 2 types)
@@ -185,14 +214,19 @@ def main():
 def _generate_limited_images(supervisor, product_research, content):
     """Generate only 2 types of images to reduce complexity."""
     try:
+        # Handle case where product_research might be an error or invalid format
+        product_name = "TeraSky product"
+        if isinstance(product_research, dict) and not product_research.get('error', False):
+            product_name = product_research.get('name', 'TeraSky product')
+        
         # Create simplified image prompts
         simple_prompts = {
             "social_media": {
-                "prompt": f"Professional marketing image for {product_research.get('name', 'TeraSky product')}, modern tech style, blue and orange colors",
+                "prompt": f"Professional marketing image for {product_name}, modern tech style, blue and orange colors",
                 "description": "Social media marketing image"
             },
             "blog": {
-                "prompt": f"Technical illustration for {product_research.get('name', 'TeraSky product')}, clean professional design, technology theme",
+                "prompt": f"Technical illustration for {product_name}, clean professional design, technology theme",
                 "description": "Blog header image"
             }
         }
