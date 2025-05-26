@@ -244,7 +244,7 @@ Focus on creating professional, technical, and modern visuals that align with Te
             )
             
             # Parse response
-            response_body = json.loads(response.get('body').read())
+            response_body = json.loads(response['body'].read())
             image_data = response_body.get('images', [{}])[0].get('base64', '')
             
             return image_data

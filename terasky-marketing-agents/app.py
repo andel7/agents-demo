@@ -214,10 +214,20 @@ def main():
 def _generate_limited_images(supervisor, product_research, content):
     """Generate only 2 types of images to reduce complexity."""
     try:
+        # Debug: Log the types and contents of the parameters
+        logger.info(f"_generate_limited_images called with:")
+        logger.info(f"  product_research type: {type(product_research)}")
+        logger.info(f"  product_research content: {str(product_research)[:200]}...")
+        logger.info(f"  content type: {type(content)}")
+        logger.info(f"  content content: {str(content)[:200]}...")
+        
         # Handle case where product_research might be an error or invalid format
         product_name = "TeraSky product"
         if isinstance(product_research, dict) and not product_research.get('error', False):
             product_name = product_research.get('name', 'TeraSky product')
+        elif isinstance(product_research, dict) and product_research.get('error', False):
+            st.warning(f"Product research failed: {product_research.get('message', 'Unknown error')}")
+            product_name = "TeraSky product"
         
         # Create simplified image prompts
         simple_prompts = {
@@ -234,6 +244,7 @@ def _generate_limited_images(supervisor, product_research, content):
         generated_images = []
         for image_type, details in simple_prompts.items():
             try:
+                st.info(f"Generating {image_type} image with prompt: {details['prompt'][:100]}...")
                 image_data = supervisor.agents['image_generator']._generate_image(
                     details['prompt'], 
                     "1024x1024"
@@ -243,8 +254,10 @@ def _generate_limited_images(supervisor, product_research, content):
                     'description': details['description'],
                     'image_data': image_data
                 })
+                st.success(f"✅ {image_type} image generated successfully")
             except Exception as e:
                 st.warning(f"Could not generate {image_type} image: {str(e)}")
+                logger.error(f"Image generation failed for {image_type}: {str(e)}")
         
         return generated_images
         
