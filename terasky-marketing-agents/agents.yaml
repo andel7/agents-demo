@@ -48,7 +48,7 @@ content_creator:
     content for social media, email campaigns, blogs, ads, and landing pages while 
     maintaining TeraSky's professional and technical brand voice. You pay close attention 
     to technical accuracy and business value communication.
-  llm: us.anthropic.claude-3-haiku-20240307-v1:0
+  llm: us.anthropic.claude-3-5-sonnet-20241022-v2:0
 
 qa_validator:
   role: >
