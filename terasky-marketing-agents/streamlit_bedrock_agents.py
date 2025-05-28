@@ -36,7 +36,6 @@ if 'agent_invocation_count' not in st.session_state:
     st.session_state['agent_invocation_count'] = 0
 
 # AWS clients
-@st.cache_resource
 def get_aws_clients():
     """Initialize AWS clients with caching."""
     return {
@@ -47,7 +46,6 @@ def get_aws_clients():
     }
 
 # Get AWS account info
-@st.cache_data
 def get_aws_info():
     """Get AWS account information."""
     clients = get_aws_clients()
